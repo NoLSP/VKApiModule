@@ -11,8 +11,8 @@ namespace VKApiModule
 {
     public static class VKManager
     {
-        private static long p_UserId;
-        private static Dictionary<string, long> p_GroupsIdsByName = new Dictionary<string, long>();
+        public static long UserId { get; private set; }
+        public static Dictionary<string, long> GroupsIdsByName { get; private set; } = new Dictionary<string, long>();
         private static Dictionary<long, Dictionary<string, long>> p_AlbumsIdsByNameByGroupId = new Dictionary<long, Dictionary<string, long>>();
         private static VKClient? p_VKClient;
 
@@ -23,9 +23,9 @@ namespace VKApiModule
         {
             p_VKClient = new VKClient(accessToken);
             
-            p_UserId = p_VKClient.GetUserId(userName);
+            UserId = p_VKClient.GetUserId(userName);
 
-            p_GroupsIdsByName = p_VKClient.GetGroups(p_UserId)
+            GroupsIdsByName = p_VKClient.GetGroups(UserId)
                 .Where(x => groupsNames.Contains(x.Key))
                 .ToDictionary(x => x.Key, x => x.Value);
         }
@@ -38,7 +38,7 @@ namespace VKApiModule
                 return false;
             }
 
-            if(!p_GroupsIdsByName.TryGetValue(groupName, out var groupId))
+            if(!GroupsIdsByName.TryGetValue(groupName, out var groupId))
             {
                 reason = $"Group '{groupName}' not found.";
                 return false;
@@ -62,7 +62,7 @@ namespace VKApiModule
                     }
                 }
 
-                if(groupAlbumsIdsByName.Count() != albumsNames.Count())
+                if(groupAlbumsIdsByName.Count() != albumsNames.Count() || albumsNames.Any(x => !groupAlbumsIdsByName.Keys.Contains(x)))
                 {
                     var notFoundAlbumsNames = albumsNames.Where(x => !groupAlbumsIdsByName.Keys.Contains(x));
                     reason = $"Not found albums: {String.Join(", ", notFoundAlbumsNames)}";
@@ -88,7 +88,7 @@ namespace VKApiModule
                 return false;
             }
 
-            if(!p_GroupsIdsByName.TryGetValue(groupName, out var groupId))
+            if(!GroupsIdsByName.TryGetValue(groupName, out var groupId))
             {
                 reason = $"Group '{groupName}' not found locally. Try refresh groups.";
                 return false;
@@ -105,7 +105,7 @@ namespace VKApiModule
                 return false;
             }
             
-            if(!p_GroupsIdsByName.TryGetValue(groupName, out var groupId))
+            if(!GroupsIdsByName.TryGetValue(groupName, out var groupId))
             {
                 reason = $"Group '{groupName}' not found.";
                 return false;
