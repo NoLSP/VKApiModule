@@ -56,37 +56,42 @@ namespace VKApiModule
             return albums.ToDictionary(x => x.Title, x => x.Id);
         }
 
-        public bool PostPublication(long groupId, string message, DateTime publicationDateTimeUtc, string copyright, 
-            List<string> imagesPaths, out string reason)
+        public List<(long, DateTime)> GetScheduledPosts(long groupId)
         {
-            try
-            {
-                var photos = UploadPhotosToWall(groupId, imagesPaths);
-                if (photos == null)
-                {
-                    reason = "Upload 0 images.";
-                    return false;
-                }
+            var groupWall = p_vkApi.Wall.GetById(posts: new string [] {$"{groupId}"}, 0);
 
-                var postId = p_vkApi.Wall.Post(new WallPostParams()
-                {
-                    OwnerId = (-1) * (long)groupId,
-                    FromGroup = true,
-                    Message = message,
-                    PublishDate = publicationDateTimeUtc,
-                    Copyright = copyright,
-                    Attachments = photos
-                });
+            if(groupWall == null)
+                throw new Exception("Group wall not found.");
 
-                reason = "";
-                return true;
-            }
-            catch (Exception ex)
+            var now = DateTime.UtcNow;
+
+            return groupWall
+                .Where(x => x.Date > now)
+                .Select(x => (x.Id!.Value, x.Date!.Value))
+                .ToList();
+        }
+
+        public bool DeletePublication(long groupId, long postId)
+        {
+            return p_vkApi.Wall.Delete(ownerId: groupId, postId: postId);
+        }
+
+        public void PostPublication(long groupId, string message, DateTime publicationDateTimeUtc, string copyright, 
+            List<string> imagesPaths)
+        {
+            var photos = UploadPhotosToWall(groupId, imagesPaths);
+            if((photos?.Count() ?? 0) != imagesPaths.Count())
+                throw new Exception("Images not uploaded.");
+
+            var postId = p_vkApi.Wall.Post(new WallPostParams()
             {
-                p_Logger.Error(ex);
-                reason = ex.Message;
-                return false;
-            }
+                OwnerId = (-1) * (long)groupId,
+                FromGroup = true,
+                Message = message,
+                PublishDate = publicationDateTimeUtc,
+                Copyright = copyright,
+                Attachments = photos
+            });
         }
 
         public void UploadPhotosToAlbum(long groupId, long albumId, List<string> filePaths)

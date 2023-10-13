@@ -28,7 +28,8 @@ namespace Tests
         public void InitializeTest()
         {
             var groups = (p_Settings.Groups as Dictionary<string, List<string>>)!;
-            VKManager.Initialize(p_Settings.UserName, p_Settings.AccessToken, groups.Keys.ToList());
+            Assert.True(VKManager.Initialize(p_Settings.UserName, p_Settings.AccessToken, groups.Keys.ToList(), out string reason));
+            Assert.True(String.IsNullOrWhiteSpace(reason));
             Assert.Equal(p_Settings.UserId, VKManager.UserId);
             Assert.Equal(p_Settings.GroupsIds[0], VKManager.GroupsIdsByName[groups.Keys.First()]);
         }
@@ -41,7 +42,8 @@ namespace Tests
             //Assert.Equal($"Not initialized.", resultReason);
 
             var groups = (p_Settings.Groups as Dictionary<string, List<string>>)!;
-            VKManager.Initialize(p_Settings.UserName, p_Settings.AccessToken, groups.Keys.ToList());
+            Assert.True(VKManager.Initialize(p_Settings.UserName, p_Settings.AccessToken, groups.Keys.ToList(), out string reason));
+            Assert.True(String.IsNullOrWhiteSpace(reason));
 
             var resultStatus = VKManager.ObtainAlbums(groups.Keys.First(), groups.Values.First(), out var resultReason);
             Assert.True(resultStatus);
@@ -62,26 +64,47 @@ namespace Tests
             //Assert.False(resultStatus);
             //Assert.Equal($"Not initialized.", resultReason);
 
+            var groups = (p_Settings.Groups as Dictionary<string, List<string>>)!;
+            Assert.True(VKManager.Initialize(p_Settings.UserName, p_Settings.AccessToken, groups.Keys.ToList(), out string reason));
+            Assert.True(String.IsNullOrWhiteSpace(reason));
+
             var resultStatus = VKManager.PostPublication("blabla","", DateTime.UtcNow, "", new List<string> { "" }, out var resultReason);
             Assert.False(resultStatus);
             Assert.Equal($"Group 'blabla' not found locally. Try refresh groups.", resultReason);
         }
 
         [Fact]
-        public void UploadPhotosToAlbum()
+        public void UploadPhotosToAlbumTest()
         {
             //var resultStatus = VKManager.UploadPhotosToAlbum("blabla", "blabla", new List<string> { "" }, out var resultReason);
             //Assert.False(resultStatus);
             //Assert.Equal($"Not initialized.", resultReason);
 
+            var groups = (p_Settings.Groups as Dictionary<string, List<string>>)!;
+            Assert.True(VKManager.Initialize(p_Settings.UserName, p_Settings.AccessToken, groups.Keys.ToList(), out string reason));
+            Assert.True(String.IsNullOrWhiteSpace(reason));
+
             var resultStatus = VKManager.UploadPhotosToAlbum("blabla", "blabla", new List<string> { "" }, out var resultReason);
             Assert.False(resultStatus);
             Assert.Equal($"Group 'blabla' not found.", resultReason);
 
-            var groups = (p_Settings.Groups as Dictionary<string, List<string>>)!;
             resultStatus = VKManager.UploadPhotosToAlbum(groups.Keys.First(), "blabla", new List<string> { "" }, out resultReason);
             Assert.False(resultStatus);
             Assert.Equal($"Album 'blabla' not found in group '{groups.Keys.First()}'.", resultReason);
+        }
+
+        [Fact]
+        public void UpdateScheduledPostsTest()
+        {
+            //var resultStatus = VKManager.UploadPhotosToAlbum("blabla", "blabla", new List<string> { "" }, out var resultReason);
+            //Assert.False(resultStatus);
+            //Assert.Equal($"Not initialized.", resultReason);
+
+            var groups = (p_Settings.Groups as Dictionary<string, List<string>>)!;
+            Assert.True(VKManager.Initialize(p_Settings.UserName, p_Settings.AccessToken, groups.Keys.ToList(), out string reason));
+            Assert.True(String.IsNullOrWhiteSpace(reason));
+
+            Assert.Equal(0, VKManager.ScheduledPostsByGroupId.Sum(x => x.Value.Count()));
         }
     }
 }
